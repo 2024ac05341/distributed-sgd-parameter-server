@@ -2,7 +2,7 @@ import numpy as np
 from multiprocessing import Pool
 import time
 
-def generate_data(n_samples=100000, n_features=10, seed=42):
+def generate_data(n_samples=20000, n_features=20, seed=42):
     np.random.seed(seed)
     X = np.random.randn(n_samples, n_features)
     w_true = np.random.randn(n_features)
@@ -19,7 +19,7 @@ def worker_compute(args):
     grad = compute_gradient(shard_X, shard_y, w)
     return grad, time.time() - start
 
-def run_distributed_sgd(n_workers, n_iters=30, lr=0.01):
+def run_distributed_sgd(n_workers, n_iters=50, lr=0.001):
     X, y, w_true = generate_data()
     shard_size = len(y) // n_workers
     shards = [(X[i*shard_size:(i+1)*shard_size], y[i*shard_size:(i+1)*shard_size]) 
@@ -43,6 +43,7 @@ def run_distributed_sgd(n_workers, n_iters=30, lr=0.01):
 
 if __name__ == '__main__':
     print("Running distributed SGD simulation...\n")
+    
     times = {}
     for n in [1, 2, 4]:
         avg_time, loss, w_true, w_final = run_distributed_sgd(n)
@@ -55,8 +56,8 @@ if __name__ == '__main__':
         print(f"  Model converged: {np.allclose(w_final, w_true, atol=0.5)}\n")
     
     # Theoretical communication cost (bytes, float64)
-    grad_size_bytes = 10 * 8   # 10 features
-    n_iters = 30
-    for n in [1,2,4]:
+    grad_size_bytes = 20 * 8   # 20 features × 8 bytes
+    n_iters = 50
+    for n in [1, 2, 4]:
         comm = n * grad_size_bytes * n_iters
         print(f"N={n} total communication cost: {comm} bytes")
